@@ -1,4 +1,10 @@
+import { Buffer } from 'buffer';
 import matter from 'gray-matter';
+
+// Make Buffer available globally for gray-matter
+if (typeof window !== 'undefined') {
+  window.Buffer = Buffer;
+}
 
 export interface BlogPost {
   id: string;
