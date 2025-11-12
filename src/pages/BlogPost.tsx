@@ -1,4 +1,9 @@
 import { useParams, Link } from "react-router-dom";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypePrism from "rehype-prism-plus";
+import Gist from "react-embed";
 import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +34,32 @@ const BlogPost = () => {
     );
   }
 
+  const processedContent = post.content
+    .replace(
+      /{{< youtube\s+([a-zA-Z0-9_-]+)\s+>}}/g,
+      '<iframe width="560" height="315" src="https://www.youtube.com/embed/$1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+    )
+    .replace(
+      /{{<\s*highlight\s+json\s*>}}([\s\S]*?){{<\s*\/\s*highlight\s*>}}/g,
+      "```json\n$1\n```"
+    )
+    .replace(
+      /{{<\s*highlight\s+docker\s*>}}([\s\S]*?){{<\s*\/\s*highlight\s*>}}/g,
+      "```docker\n$1\n```"
+    )
+    .replace(
+      /{{<\s*highlight\s+yaml\s*>}}([\s\S]*?){{<\s*\/\s*highlight\s*>}}/g,
+      "```yaml\n$1\n```"
+    )
+    .replace(
+      /{{<\s*highlight\s+go\s*>}}([\s\S]*?){{<\s*\/\s*highlight\s*>}}/g,
+      "```go\n$1\n```"
+    )
+    .replace(
+      /{{< gist ([a-zA-Z0-9]+) ([a-zA-Z0-9]+) >}}/g,
+      '<div data-gist-id="$1/$2"></div>'
+    );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -53,8 +84,8 @@ const BlogPost = () => {
 
           <div className="flex flex-wrap gap-2 mb-8">
             {post.tags.map((tag) => (
-              <Badge 
-                key={tag} 
+              <Badge
+                key={tag}
                 variant="secondary"
                 className="font-mono hover:bg-primary hover:text-primary-foreground transition-colors"
               >
@@ -65,58 +96,42 @@ const BlogPost = () => {
         </div>
 
         <div className="prose prose-invert prose-lg max-w-none animate-slide-up">
-          <div className="bg-card border border-border rounded-lg p-8 mb-8">
-            <p className="text-lg leading-relaxed text-muted-foreground mb-6">
-              {post.excerpt}
-            </p>
-          </div>
+          {post.excerpt && (
+            <div className="bg-card border border-border rounded-lg p-8 mb-8">
+              <p className="text-lg leading-relaxed text-muted-foreground mb-6">
+                {post.excerpt}
+              </p>
+            </div>
+          )}
 
-          <div className="space-y-6 text-foreground leading-relaxed">
-            {post.content.split('\n\n').map((paragraph, index) => {
-              if (paragraph.startsWith('## ')) {
-                return (
-                  <h2 key={index} className="text-2xl font-bold mt-12 mb-4 text-primary">
-                    {paragraph.replace('## ', '')}
-                  </h2>
-                );
-              }
-              if (paragraph.startsWith('### ')) {
-                return (
-                  <h3 key={index} className="text-xl font-semibold mt-8 mb-3">
-                    {paragraph.replace('### ', '')}
-                  </h3>
-                );
-              }
-              if (paragraph.startsWith('- ')) {
-                const items = paragraph.split('\n').filter(line => line.startsWith('- '));
-                return (
-                  <ul key={index} className="list-disc list-inside space-y-2 ml-4">
-                    {items.map((item, i) => (
-                      <li key={i} className="text-muted-foreground">
-                        {item.replace('- ', '')}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-              if (paragraph.match(/^\d+\./)) {
-                const items = paragraph.split('\n').filter(line => line.match(/^\d+\./));
-                return (
-                  <ol key={index} className="list-decimal list-inside space-y-2 ml-4">
-                    {items.map((item, i) => (
-                      <li key={i} className="text-muted-foreground">
-                        {item.replace(/^\d+\.\s/, '')}
-                      </li>
-                    ))}
-                  </ol>
-                );
-              }
-              return (
-                <p key={index} className="text-muted-foreground leading-relaxed">
-                  {paragraph}
-                </p>
-              );
-            })}
+          <div className="prose prose-invert prose-lg max-w-none space-y-6 text-foreground leading-relaxed">
+            <Markdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw, rehypePrism]}
+              components={{
+                table: ({ node, ...props }) => (
+                  <table className="w-full text-left border-collapse" {...props} />
+                ),
+                thead: ({ node, ...props }) => (
+                  <thead className="bg-card border-b border-border" {...props} />
+                ),
+                th: ({ node, ...props }) => (
+                  <th className="p-4 font-medium" {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td className="p-4 border-t border-border" {...props} />
+                ),
+                div: (props) => {
+                  const { "data-gist-id": gistId, ...rest } = props as any;
+                  if (gistId) {
+                    return <Gist url={`https://gist.github.com/${gistId}`} />;
+                  }
+                  return <div {...rest} />;
+                },
+              }}
+            >
+              {processedContent}
+            </Markdown>
           </div>
         </div>
 
