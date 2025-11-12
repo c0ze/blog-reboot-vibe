@@ -36,6 +36,14 @@ export const Header = () => {
             <Archive className="w-4 h-4" />
             Archive
           </Link>
+          <a
+            href="https://arda.tr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary text-muted-foreground"
+          >
+            arda.tr
+          </a>
         </div>
       </nav>
     </header>
