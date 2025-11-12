@@ -26,6 +26,16 @@ To get a local copy up and running, follow these simple steps.
     npm run dev
     ```
 
+## Creating a New Post
+
+To create a new blog post, run the following command:
+
+```sh
+npm run post "Your New Post Title"
+```
+
+This will create a new markdown file in `content/blog` with the current date and a pre-filled header.
+
 ## Deployment
 
 This project includes a GitHub Actions workflow that automatically deploys the site to GitHub Pages on every push to the `main` branch.
