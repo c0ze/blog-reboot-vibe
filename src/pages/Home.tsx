@@ -19,7 +19,7 @@ const Home = () => {
           <span className="text-sm font-mono text-primary">Software Development Journey</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-cyan-400 bg-clip-text text-transparent">
-          Cozi
+          Coze
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Exploring programming languages, frameworks, design patterns, and more. 

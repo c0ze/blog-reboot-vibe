@@ -14,7 +14,7 @@ export const Header = () => {
           className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
         >
           <Code2 className="w-8 h-8 text-primary" />
-          Cozi
+          Coze
         </Link>
         
         <div className="flex items-center gap-6">
