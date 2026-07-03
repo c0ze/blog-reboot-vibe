@@ -78,13 +78,30 @@ function processFile(filePath: string) {
         .join(' ');
 
     // Create status text
-    let statusText = `📝 New blog post: ${title}\n\n`;
-    if (excerpt) {
-        statusText += `${excerpt}\n\n`;
-    }
-    statusText += `${postUrl}`;
-    if (hashtags) {
-        statusText += `\n\n${hashtags}`;
+    const compose = (body: string) => {
+        let s = `📝 New blog post: ${title}\n\n`;
+        if (body) {
+            s += `${body}\n\n`;
+        }
+        s += `${postUrl}`;
+        if (hashtags) {
+            s += `\n\n${hashtags}`;
+        }
+        return s;
+    };
+
+    // Mastodon rejects statuses over 500 characters (422). Trim the excerpt to
+    // fit rather than failing the whole deploy. Mastodon counts any URL as 23
+    // characters regardless of its real length, so measure accordingly.
+    const LIMIT = 495;
+    const effectiveLength = (s: string) => s.length - postUrl.length + 23;
+    let statusText = compose(excerpt);
+    if (effectiveLength(statusText) > LIMIT) {
+        const overhead = effectiveLength(statusText) - excerpt.length;
+        const room = Math.max(LIMIT - overhead - 1, 0);
+        const trimmed = room > 0 ? `${excerpt.slice(0, room).trimEnd()}…` : '';
+        console.warn(`⚠️ Status too long (effective ${effectiveLength(statusText)}); trimming excerpt to fit.`);
+        statusText = compose(trimmed);
     }
 
     return postToMastodon(statusText);
