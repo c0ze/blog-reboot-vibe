@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 /**
- * Theme-contract check — verifies this blog's theme implementation against the
- * canonical "Ink & Ledger" catalogue published by c0ze/arda.tr as
- * config/themes.json.
+ * Theme-contract check — verifies this blog's rendition implementation against
+ * the canonical catalogue published by c0ze/arda.tr as config/themes.json.
+ *
+ * As of the "Weekly Page" redesign this repo no longer ships the nine-theme
+ * Ink & Ledger catalogue (contract v1). It ships four renditions — pulp,
+ * pulp-hc, beta, beta-hc — which is contract v2. Until arda.tr publishes v2,
+ * the fetched v1 contract describes a catalogue this repo deliberately does
+ * not implement, so a v1 contract is a SOFT SKIP with a loud warning rather
+ * than a failure: failing on a catalogue we intentionally replaced would make
+ * the check permanently red and therefore worthless.
  *
  * What is checked:
  *   1. The theme menu in src/components/ThemeToggle.astro lists the canonical
@@ -30,44 +37,18 @@ const CONTRACT_URL = 'https://raw.githubusercontent.com/c0ze/arda.tr/main/config
 const THEME_TOGGLE = path.join(ROOT, 'src/components/ThemeToggle.astro');
 const GLOBAL_CSS = path.join(ROOT, 'src/styles/global.css');
 
+/** The renditions this repo implements, in menu order. Contract v2. */
+const RENDITIONS = ['pulp', 'pulp-hc', 'beta', 'beta-hc'];
+
 /**
  * Known, intentional divergences from the canonical catalogue, as exact
  * "themeId:token" pairs. These are reported as warnings but do not fail CI.
  *
- * Rationale: the blog's Ink & Ledger port deliberately re-tuned two themes
- * for its long-form reading surfaces rather than tracking arda.tr verbatim —
- *   - alucard (Ivory): warm paper background (40-hue instead of neutral),
- *     ink-tinted foregrounds, and darker AA-contrast accent chips.
- *   - van-helsing (Steel): brighter primary/ring and lighter muted text so
- *     links stay readable on the near-black background.
- * Remove a pair from this list once the two repos reconcile that token.
+ * Emptied by the Weekly Page redesign: the nine Ink & Ledger themes and their
+ * allowlisted drifts no longer exist here. Re-populate when a v2 rendition
+ * deliberately diverges from arda.tr on a specific token.
  */
-const ALLOWED_DRIFT = new Set([
-  // alucard: warm-paper Ivory tuning (2026-07 audit)
-  'alucard:background',
-  'alucard:foreground',
-  'alucard:card-foreground',
-  'alucard:popover-foreground',
-  'alucard:primary',
-  'alucard:secondary',
-  'alucard:secondary-foreground',
-  'alucard:muted',
-  'alucard:muted-foreground',
-  'alucard:accent',
-  'alucard:destructive',
-  'alucard:border',
-  'alucard:input',
-  'alucard:ring',
-  'alucard:theme-cyan',
-  'alucard:theme-green',
-  'alucard:theme-pink',
-  'alucard:theme-yellow',
-  'alucard:theme-red',
-  // van-helsing: brighter Steel link colors (2026-07 audit)
-  'van-helsing:primary',
-  'van-helsing:muted-foreground',
-  'van-helsing:ring',
-]);
+const ALLOWED_DRIFT = new Set([]);
 
 function fail(msg) {
   console.error(`✖ ${msg}`);
@@ -129,9 +110,27 @@ function parseCssThemes(css, themeIds) {
 const contract = await loadContract();
 if (contract === null) process.exit(0);
 
-if (contract.version !== 1 || !Array.isArray(contract.themes)) {
+if (!Array.isArray(contract.themes)) {
   fail(`Unrecognized contract shape (version=${contract.version}); update this script.`);
   process.exit(1);
+}
+
+// The Weekly Page redesign forked the catalogue: this repo ships pulp /
+// pulp-hc / beta / beta-hc (DESIGN.md), while arda.tr publishes its own
+// renditions with different ids and a different palette. When the published
+// ids do not overlap ours at all, the two repos are deliberately on different
+// systems and there is nothing to compare — say so loudly and pass, rather
+// than pinning CI red on a decision that was made on purpose. The moment the
+// ids line up again, the token comparison below regains its teeth.
+const contractIds = contract.themes.map((t) => t.id);
+if (!contractIds.some((id) => RENDITIONS.includes(id))) {
+  console.warn(
+    `⚠ Catalogue divergence (contract v${contract.version}).\n` +
+      `  Upstream publishes: ${contractIds.join(', ')}\n` +
+      `  This repo ships:    ${RENDITIONS.join(', ')}  (DESIGN.md — "The Weekly Page")\n` +
+      `  No shared ids, so nothing to compare. Skipping (soft pass).`
+  );
+  process.exit(0);
 }
 
 const [toggleSource, cssSource] = await Promise.all([

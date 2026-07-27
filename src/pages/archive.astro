@@ -1,74 +1,116 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { getPublishedPosts, getSlug } from '@/lib/posts';
-import { ledgerNo } from '@/lib/display';
+import LedgerRow from '@/components/LedgerRow.astro';
+import { getLedger, spell } from '@/lib/ledger';
+import { tonePlate } from '@/lib/display';
 
-const sortedPosts = await getPublishedPosts();
-const total = sortedPosts.length;
+const { entries, total, years, gaps, firstYear, lastYear } = await getLedger();
 
-// Ledger numbers follow the global newest-first order.
-const numbered = sortedPosts.map((post, index) => ({ post, no: ledgerNo(index, total) }));
+// Newest year first, with each empty run printed where it actually falls.
+const descending = [...years].reverse();
+const byYear = new Map<number, typeof entries>();
+for (const entry of entries) {
+  const year = entry.date.getUTCFullYear();
+  const bucket = byYear.get(year);
+  if (bucket) bucket.push(entry);
+  else byYear.set(year, [entry]);
+}
 
-// Group posts by year
-const postsByYear = numbered.reduce((acc, entry) => {
-  const year = entry.post.data.date.getFullYear();
-  if (!acc[year]) acc[year] = [];
-  acc[year].push(entry);
-  return acc;
-}, {} as Record<number, typeof numbered>);
+/** Empty-year runs keyed by their newest year, so they print between tiers. */
+const gapAt = new Map<number, (typeof gaps)[number]>();
+for (const gap of gaps) gapAt.set(gap.to, gap);
+const longestGap = gaps[0];
 
-const years = Object.keys(postsByYear).map(Number).sort((a, b) => b - a);
+// Elapsed silence, not empty calendar years: the distance between the last
+// entry before the run and the first entry after it.
+function elapsed(from: number, to: number): number {
+  const before = entries.filter((e) => e.date.getUTCFullYear() < from).at(0);
+  const after = entries.filter((e) => e.date.getUTCFullYear() > to).at(-1);
+  if (!before || !after) return to - from + 1;
+  return Math.floor((after.date.getTime() - before.date.getTime()) / (365.25 * 864e5));
+}
+
+const maxYear = Math.max(1, ...years.map((y) => y.count));
+const spineHeight = (count: number) => (count === 0 ? 3 : Math.max(5, Math.round((count / maxYear) * 92)));
+const voidYears = years.filter((y) => y.count === 0).map((y) => y.year);
 ---
 
-<BaseLayout title="Archive - Coze" description="All blog posts organized by year">
-  <section class="container mx-auto max-w-4xl px-4 py-14">
-    <header class="mb-12">
-      <span class="font-mono text-[0.7rem] uppercase tracking-[0.24em] text-primary">Back issues</span>
-      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
-        Archive<span class="text-primary">.</span>
-      </h1>
-      <p class="mt-3 text-lg text-muted-foreground">
-        {total} entries, bound by year.
-      </p>
-    </header>
+<BaseLayout title="Archive - Coze" description="Every entry in the Coze ledger, bound by year.">
+  <div class="section-rule">
+    <h1 class="label label--b">Back issues</h1>
+    <span class="section-rule__line"></span>
+    <span class="label meta">{total} entries · {firstYear} — {lastYear}</span>
+  </div>
 
-    <div class="space-y-14">
-      {years.map((year) => (
-        <section aria-labelledby={`year-${year}`}>
-          <div class="flex items-baseline gap-4 border-b border-border pb-2">
-            <h2 id={`year-${year}`} class="font-display text-3xl font-bold tracking-tight text-primary">{year}</h2>
-            <span class="font-mono text-xs text-muted-foreground">
-              {postsByYear[year].length} {postsByYear[year].length === 1 ? 'entry' : 'entries'}
-            </span>
-          </div>
-          <ul class="mt-1">
-            {postsByYear[year].map(({ post, no }) => {
-              const formattedDate = post.data.date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-              });
-              return (
-                <li>
-                  <a href={`/blog/${getSlug(post)}`} class="ledger-row group px-1">
-                    <span class="ledger-no">{no}</span>
-                    <time datetime={post.data.date.toISOString()} class="font-mono text-xs text-muted-foreground">{formattedDate}</time>
-                    <span class="min-w-0">
-                      <span class="block truncate font-display text-base font-semibold tracking-tight transition-colors group-hover:text-primary">
-                        {post.data.title}
-                      </span>
-                      {post.data.tags.length > 0 && (
-                        <span class="mt-1 hidden font-mono text-[0.66rem] text-muted-foreground sm:block">
-                          {post.data.tags.map((tag) => `#${tag}`).join('  ')}
-                        </span>
-                      )}
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+  <!-- The volume index: tone pitch is volume, gap years left blank. -->
+  <div class="tagindex">
+    <p class="narration narration--tight">
+      Every entry, bound by year. The run is not uniform and does not pretend to be.
+    </p>
+    <div
+      class="spine mt-half"
+      role="img"
+      aria-label={`Entries per year, ${firstYear} to ${lastYear}. ${voidYears.join(', ')} are empty.`}
+    >
+      {years.map(({ year, count }) => (
+        <span class={`spine__yr${count === 0 ? ' spine__yr--void' : ''}`}>
+          <span
+            class={count === 0 ? 'spine__bar spine__bar--void' : `spine__bar ${tonePlate(count, maxYear)}`}
+            style={`height:${spineHeight(count)}px`}
+          ></span>
+          <span class="spine__lab">’{String(year).slice(2)}</span>
+        </span>
       ))}
     </div>
-  </section>
+  </div>
+
+  <div class="tiers">
+    {descending.map(({ year, count }, index) => {
+      const gap = gapAt.get(year);
+      const yearEntries = byYear.get(year) ?? [];
+      return (
+        <>
+          {count > 0 && (
+            <section class="tier-row" aria-label={`${year}`}>
+              <div class={`tierlab${year === lastYear ? ' tierlab--now' : ''}`}>
+                <span class="tierlab__txt">{year}</span>
+                <span class="tierlab__n">{count} {count === 1 ? 'entry' : 'entries'}</span>
+              </div>
+              <div class="ledger">
+                {yearEntries.map((entry) => (
+                  <LedgerRow
+                    slug={entry.slug}
+                    title={entry.post.data.title}
+                    date={entry.date}
+                    tags={entry.post.data.tags}
+                    no={entry.no}
+                    minutes={entry.minutes}
+                    lang={entry.post.data.lang}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          {gap && index < descending.length - 1 && (
+            <section class="tier-row" aria-label={`${gap.from} to ${gap.to}, no entries`}>
+              <div class="tierlab tierlab--void">
+                <span class="tierlab__txt">
+                  {gap.from === gap.to ? gap.from : `${gap.from} — ${gap.to}`}
+                </span>
+                <span class="tierlab__n">0</span>
+              </div>
+              <div class={`silence ${gap === longestGap ? 'tone-30' : 'tone-10'}`}>
+                <p class="silence__cap">
+                  <span class="label label--b">
+                    {spell(elapsed(gap.from, gap.to))} {elapsed(gap.from, gap.to) === 1 ? 'year' : 'years'}
+                  </span><br />
+                  <span class="label meta">No entries</span>
+                </p>
+              </div>
+            </section>
+          )}
+        </>
+      );
+    })}
+  </div>
 </BaseLayout>

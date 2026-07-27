@@ -2,6 +2,10 @@
 
 Personal tech blog at **blog.arda.tr** - built with Astro for static HTML output, perfect SEO, and per-page social media previews.
 
+The visual system is **"The Weekly Page"** — sixteen years of posts set as a
+weekly manga page, with screentone pitch as material and panel-and-gutter as
+structure. See [DESIGN.md](./DESIGN.md).
+
 ## Quick Start
 
 ```bash
@@ -143,7 +147,7 @@ Your content here...
 
 ### Available Tags
 
-Tags are free-form — reuse an existing tag when one fits (common ones include `dev`, `geek`, `music`, `metal`, `ai`, `hardware`, `retro`). Chip colors are assigned per tag automatically in `src/lib/display.ts`.
+Tags are free-form — reuse an existing tag when one fits (common ones include `dev`, `geek`, `music`, `metal`, `ai`, `hardware`, `retro`). Tags render as outlined chips and drive the `/blog?tag=` filter; on the front page their screentone plate is picked by frequency in `src/lib/display.ts`.
 
 ## Project Structure
 
@@ -152,9 +156,9 @@ src/
 ├── content/blog/     # Markdown blog posts (one folder per year)
 ├── components/       # Astro components
 ├── layouts/          # Page layouts
-├── lib/              # Post and display helpers
+├── lib/              # Post, ledger and display helpers
 ├── pages/            # Route pages
-└── styles/           # Global CSS
+└── styles/           # Rendition tokens, screentone and the panel system
 public/
 └── images/           # Static images
 dist/                 # Build output (git-ignored)
@@ -162,10 +166,10 @@ dist/                 # Build output (git-ignored)
 
 ## Performance Features
 
-- **Zero JS by default** - Pages ship no JavaScript unless needed
-- **Inline scripts only** - Interactivity (theme menu, mobile nav, tag filter) uses small inline scripts; the only exception is `/search`, which lazy-loads the Pagefind UI on that page alone
+- **Zero JS** - The build emits no Astro JavaScript bundle at all
+- **Inline scripts only** - Four `is:inline` scripts in total: the rendition boot, the rendition switch, the `/blog` tag filter, and the `/search` Pagefind loader (which lazy-loads the Pagefind UI on that page alone)
 - **Static HTML** - Every page is pre-rendered at build time
-- **Optimized fonts** - Google Fonts with preconnect
+- **Optimized fonts** - Zen Kaku Gothic New + Zen Old Mincho from Google Fonts, with preconnect
 - **CSS purging** - Unused Tailwind classes removed automatically
 
 ## License

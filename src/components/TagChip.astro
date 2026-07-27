@@ -1,18 +1,20 @@
 ---
-import { tagChipClass, tagHref } from '@/lib/display';
+import { tagHref } from '@/lib/display';
 
 interface Props {
   tag: string;
-  /** For decorative duplicates (e.g. the marquee loop): hide from AT + keyboard. */
-  hidden?: boolean;
+  /** The active tag is the second and last place Spot Vermilion is allowed. */
+  active?: boolean;
+  /** Render as plain text — inside a row that is already one link. */
+  plain?: boolean;
 }
 
-const { tag, hidden = false } = Astro.props;
+const { tag, active = false, plain = false } = Astro.props;
+const cls = `tag${active ? ' tag--active' : ''}`;
 ---
 
-<a
-  href={tagHref(tag)}
-  class={`${tagChipClass(tag)} relative z-[1] transition-opacity hover:opacity-70`}
-  aria-hidden={hidden ? 'true' : undefined}
-  tabindex={hidden ? -1 : undefined}
->#{tag}</a>
+{plain ? (
+  <span class={cls}>{tag}</span>
+) : (
+  <a class={cls} href={tagHref(tag)} aria-current={active ? 'true' : undefined}>{tag}</a>
+)}

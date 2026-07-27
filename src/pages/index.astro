@@ -1,26 +1,78 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import CarouselCard from '@/components/CarouselCard.astro';
-import TagChip from '@/components/TagChip.astro';
-import { getPublishedPosts, getSlug } from '@/lib/posts';
-import { ledgerNo } from '@/lib/display';
+import StripCell from '@/components/StripCell.astro';
+import { getLedger, spell, type Tier } from '@/lib/ledger';
+import { tagHref, tonePlate } from '@/lib/display';
 
-const posts = await getPublishedPosts();
-const total = posts.length;
-const featured = posts.slice(0, 6);
+const ledger = await getLedger();
+const { total, entries, tiers, years, gaps, tags, tagsUsedOnce, firstYear, lastYear } = ledger;
 
-// Tag marquee: most-used tags, duplicated for a seamless CSS loop.
-const tagCounts = posts
-  .flatMap((post) => post.data.tags)
-  .reduce((acc, tag) => acc.set(tag, (acc.get(tag) ?? 0) + 1), new Map<string, number>());
-const marqueeTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 18).map(([tag]) => tag);
+/* THE RUN — the current year, month by month, newest first. Full tiers are
+   printed until the page is carrying about a screen's worth of panels; the
+   rest of the year compresses into tone measures, because a strip that keeps
+   going stops being a strip. */
+const currentYear = lastYear;
+const yearTiers = tiers.filter((tier) => Number(tier.key.slice(0, 4)) === currentYear);
+
+const RUN_BUDGET = 24;
+const full: Tier[] = [];
+const compressed: Tier[] = [];
+let carried = 0;
+for (const tier of yearTiers) {
+  if (compressed.length === 0 && carried + tier.entries.length <= RUN_BUDGET) {
+    full.push(tier);
+    carried += tier.entries.length;
+  } else {
+    compressed.push(tier);
+  }
+}
+
+const shortMonth = (key: string) =>
+  new Date(`${key}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+const compressedLabel =
+  compressed.length === 0 ? ''
+  : compressed.length <= 2 ? compressed.map((t) => shortMonth(t.key)).join(' · ')
+  : `${shortMonth(compressed[0].key)} — ${shortMonth(compressed[compressed.length - 1].key)}`;
+const compressedCount = compressed.reduce((sum, tier) => sum + tier.entries.length, 0);
+
+/* The longest month, the shortest entry, the newest entry — the notes a
+   weekly prints under a panel so the proportion is legible as a fact. */
+const runEntries = full.flatMap((tier) => tier.entries);
+const longestMinutes = Math.max(0, ...runEntries.map((e) => e.minutes));
+const shortestMinutes = Math.min(...runEntries.map((e) => e.minutes), Infinity);
+const noteFor = (minutes: number) =>
+  minutes === longestMinutes ? 'longest on the page'
+  : minutes === shortestMinutes ? 'shortest'
+  : undefined;
+
+/* THE SILENCE — the signature moment. Elapsed time, not empty calendar years:
+   the gap between the last entry before it and the first entry after it. */
+const silence = gaps[0];
+let silenceYears = silence ? silence.years : 0;
+if (silence) {
+  const before = entries.filter((e) => e.date.getUTCFullYear() < silence.from).at(0);
+  const after = entries.filter((e) => e.date.getUTCFullYear() > silence.to).at(-1);
+  if (before && after) {
+    silenceYears = Math.floor((after.date.getTime() - before.date.getTime()) / (365.25 * 864e5));
+  }
+}
+
+/* The tag index: pitch is frequency, and the printed count carries what four
+   pitches cannot. */
+const maxTag = tags[0]?.count ?? 1;
+const headTags = tags.filter((t) => t.count > 1).slice(0, 11);
+
+/* The year spine: sixteen years, tone pitch is volume, gap years left blank. */
+const maxYear = Math.max(1, ...years.map((y) => y.count));
+const SPINE_MAX = 92;
+const spineHeight = (count: number) => (count === 0 ? 3 : Math.max(5, Math.round((count / maxYear) * SPINE_MAX)));
+const voidYears = years.filter((y) => y.count === 0).map((y) => y.year);
 ---
 
 <BaseLayout
   title="Coze - Software Development Journey"
   description="Arda Karaduman's tech blog: AI tooling, Go, DevOps, home networking, generative music, and other side quests — logged since 2010."
 >
-  <!-- JSON-LD: Blog + author -->
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Blog",
@@ -40,119 +92,160 @@ const marqueeTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0
     }
   })} />
 
-  <!-- Masthead -->
-  <section class="relative overflow-hidden">
-    <div class="dotgrid absolute inset-0" aria-hidden="true"></div>
-    <div class="container relative mx-auto px-4 pb-12 pt-16 sm:pt-24">
-      <span class="glass inline-flex items-center gap-3 rounded-full border px-4 py-1.5">
-        <span class="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-primary">The ledger of side quests</span>
-        <span class="h-3.5 w-px bg-border" aria-hidden="true"></span>
-        <span class="font-mono text-[0.66rem] text-muted-foreground">est. 2010 · {total} entries</span>
-      </span>
-      <h1 class="mt-7 font-display text-6xl font-bold leading-[0.95] tracking-tight sm:text-7xl md:text-8xl">
-        Coze<span class="text-primary">.</span>
-      </h1>
-      <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-        Software development journey — AI tooling, Go, DevOps, home networking,
-        generative music, and whatever refused to stay a small experiment.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a href="/blog" class="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.03]">
-          Browse all entries
-        </a>
-        <a href="/archive" class="glass rounded-full border px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:text-primary">
-          Archive by year
-        </a>
-      </div>
-    </div>
+  <div class="section-rule">
+    <h1 class="label label--b">The run — {currentYear}, month by month</h1>
+    <span class="section-rule__line"></span>
+    <span class="label meta">panel width = reading time</span>
+  </div>
 
-    <!-- Tag marquee — each tag links to its filtered listing; hover to pause -->
-    <div class="mask-fade-x overflow-hidden border-y border-border py-2.5">
-      <div class="marquee-track flex gap-2.5 pr-2.5">
-        {marqueeTags.map((tag) => <TagChip tag={tag} />)}
-        {marqueeTags.map((tag) => <TagChip tag={tag} hidden />)}
-      </div>
-    </div>
-  </section>
-
-  <!-- Latest entries carousel -->
-  <section class="container mx-auto px-4 pt-12">
-    <div class="flex items-baseline justify-between border-b border-border pb-3">
-      <h2 class="font-mono text-[0.7rem] uppercase tracking-[0.24em] text-muted-foreground">Latest entries</h2>
-      <a href="/blog" class="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-primary hover:underline">view all →</a>
-    </div>
-
-    <div class="relative mt-5">
-      <button
-        type="button"
-        data-carousel-prev
-        aria-label="Previous entries"
-        class="carousel-arrow absolute left-0 top-[38%] z-10 h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-2xl leading-none text-foreground shadow-medium transition-colors hover:border-primary hover:text-primary"
-      >‹</button>
-
-      <ul id="latest-carousel" class="carousel-track flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-4">
-        {featured.map((post, index) => (
-          <li class="carousel-item shrink-0 snap-start list-none">
-            <CarouselCard
-              slug={getSlug(post)}
-              title={post.data.title}
-              date={post.data.date}
-              excerpt={post.data.excerpt}
-              tags={post.data.tags}
-              no={ledgerNo(index, total)}
-              image={post.data.image}
-              fresh={index === 0}
+  <div class="tiers">
+    {full.map((tier, tierIndex) => (
+      <section class="tier-row" aria-label={tier.label}>
+        <div class={`tierlab${tierIndex === 0 ? ' tierlab--now' : ''}`}>
+          <span class="tierlab__txt">{tier.label}</span>
+          <span class="tierlab__n">{tier.entries.length} {tier.entries.length === 1 ? 'entry' : 'entries'}</span>
+        </div>
+        <div class="run">
+          {tier.entries.map((entry, entryIndex) => (
+            <StripCell
+              slug={entry.slug}
+              title={entry.post.data.title}
+              date={entry.date}
+              no={entry.no}
+              minutes={entry.minutes}
+              tags={entry.post.data.tags}
+              excerpt={entry.post.data.excerpt}
+              lang={entry.post.data.lang}
+              current={tierIndex === 0 && entryIndex === 0}
+              lead={entry.minutes >= 8 || (tierIndex === 0 && entryIndex === 0)}
+              sitBack={entry.minutes <= 3}
+              note={noteFor(entry.minutes)}
             />
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      </section>
+    ))}
 
-      <button
-        type="button"
-        data-carousel-next
-        aria-label="More entries"
-        class="carousel-arrow absolute right-0 top-[38%] z-10 h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-2xl leading-none text-foreground shadow-medium transition-colors hover:border-primary hover:text-primary"
-      >›</button>
+    {compressed.length > 0 && (
+      <section class="tier-row" aria-label={`${compressedLabel} ${currentYear}, compressed`}>
+        <div class="tierlab">
+          <span class="tierlab__txt">{compressedLabel}</span>
+          <span class="tierlab__n">{compressedCount} entries</span>
+        </div>
+        <div class="compress">
+          <p class="narration narration--tight">
+            The year opened faster than it reads. {spell(compressedCount)} more entries sit behind
+            these rules; the tone measure is the count, not a sample.
+          </p>
+          {compressed.map((tier) => (
+            <div class="compress__row">
+              <span class="label label--b compress__lab">{tier.label}</span>
+              <!-- The bar's length is the count; the plate stays fixed at 50,
+                   because two months a single entry apart both floor onto the
+                   70 plate and stop telling the reader anything. -->
+              <span
+                class="compress__bar tone-50"
+                style={`width:${tier.entries.length * 20}px;max-width:55%`}
+              ></span>
+              <span class="label meta">{tier.entries.length} entries</span>
+            </div>
+          ))}
+          <a class="readmore" href="/archive">See the year in full →</a>
+        </div>
+      </section>
+    )}
+
+    {silence && (
+      <section class="tier-row" aria-label={`${silence.from} to ${silence.to}, no entries`}>
+        <div class="tierlab tierlab--void">
+          <span class="tierlab__txt">{silence.from} — {silence.to}</span>
+          <span class="tierlab__n">0</span>
+        </div>
+        <div class="silence tone-30">
+          <p class="silence__cap">
+            <span class="label label--b">{spell(silenceYears)} years</span><br />
+            <span class="label meta">No entries</span>
+          </p>
+        </div>
+      </section>
+    )}
+  </div>
+
+  <!-- ================================================ below the fold: tags -->
+  <section aria-labelledby="tags-h">
+    <div class="section-rule">
+      <h2 class="label label--b" id="tags-h">Tags — pitch is frequency</h2>
+      <span class="section-rule__line"></span>
+      <span class="label meta">{tags.length} tags · {tagsUsedOnce} used once</span>
+    </div>
+    <div class="tagindex">
+      <p class="narration">
+        {tags.length} tags across {total} entries, and {tagsUsedOnce} of them are used exactly
+        once. Tone pitch stands in for volume, so the shape of the ledger is legible before a
+        single word of it is read. <span class="label label--b">legacy</span> marks everything
+        published before the silence.
+      </p>
+      <div class="tagindex__grid">
+        {headTags.map(({ tag, count }) => (
+          <a class="tagcell" href={tagHref(tag)}>
+            <span class={`tagcell__tone ${tonePlate(count, maxTag)}`}></span>
+            <span class="tagcell__body">
+              <span class="tagcell__name">{tag}</span>
+              <span class="tagcell__n">{count} entries</span>
+            </span>
+          </a>
+        ))}
+        <a class="tagcell tagcell--tail" href="/blog">
+          <span class="tagcell__tone"></span>
+          <span class="tagcell__body">
+            <span class="tagcell__name">{tagsUsedOnce} more</span>
+            <span class="tagcell__n">used exactly once</span>
+          </span>
+        </a>
+      </div>
     </div>
   </section>
 
-  <!-- Colophon strip -->
-  <section class="container mx-auto px-4 pt-16">
-    <div class="grid gap-6 rounded-xl border border-border bg-card p-7 shadow-soft sm:grid-cols-[auto_1fr] sm:p-9">
-      <span class="font-mono text-xs tracking-widest text-primary">№ 000 / ABOUT</span>
-      <div>
-        <h2 class="font-display text-xl font-bold tracking-tight">What is this place?</h2>
-        <p class="mt-2 leading-relaxed text-muted-foreground">
-          Practical notes from a systems architect's workbench in Tokyo: real problems, working
-          solutions, and the occasional unhinged experiment with AI, retro hardware, or black metal.
-          The serious career stuff lives at <a href="https://resume.arda.tr" class="text-primary underline underline-offset-4">resume.arda.tr</a>;
-          everything else gets logged here.
+  <!-- ============================================= below the fold: archive -->
+  <section aria-labelledby="arch-h">
+    <div class="section-rule">
+      <h2 class="label label--b" id="arch-h">The archive</h2>
+      <span class="section-rule__line"></span>
+      <span class="label meta">one deliberate click</span>
+    </div>
+    <div class="gate">
+      <div class="gate__body">
+        <p class="narration">
+          Recent work leads; the years behind it stay one click away and are never merged into
+          the front page. The run is not uniform and does not pretend to be — a Turkish and
+          Japanese scrapbook, a thin decade of infrastructure notes, a {silenceYears}-year
+          silence, then everything at once.
         </p>
+        <div
+          class="spine"
+          role="img"
+          aria-label={`Entries per year, ${firstYear} to ${lastYear}. ${voidYears.join(', ')} are empty.`}
+        >
+          {years.map(({ year, count }) => (
+            <span class={`spine__yr${count === 0 ? ' spine__yr--void' : ''}`}>
+              <span
+                class={count === 0 ? 'spine__bar spine__bar--void' : `spine__bar ${tonePlate(count, maxYear)}`}
+                style={`height:${spineHeight(count)}px`}
+              ></span>
+              <span class="spine__lab">’{String(year).slice(2)}</span>
+            </span>
+          ))}
+        </div>
+        {silence && (
+          <p class="label meta">{silence.from} – {silence.to} · the silence · no entries</p>
+        )}
       </div>
+      <a class="gate__cta" href="/archive">
+        <span class="label meta">Entries in the ledger</span>
+        <span class="gate__cta-n">{total}</span>
+        <span class="label meta">{firstYear} — {lastYear}</span>
+        <span class="gate__cta-go mt-half">Enter the archive →</span>
+      </a>
     </div>
   </section>
 </BaseLayout>
-
-<style>
-  .carousel-track { scrollbar-width: none; -ms-overflow-style: none; }
-  .carousel-track::-webkit-scrollbar { display: none; }
-  /* Latest card is wider (focused); the rest are scrollable peers. */
-  .carousel-item { width: clamp(17rem, 80vw, 22rem); }
-  .carousel-item:first-child { width: clamp(20rem, 88vw, 30rem); }
-  .carousel-arrow { display: none; }
-  @media (min-width: 768px) { .carousel-arrow { display: inline-flex; } }
-  /* Pause the tag marquee on hover so the tags are easy to click. */
-  .marquee-track:hover { animation-play-state: paused; }
-</style>
-
-<script is:inline>
-  (function () {
-    var track = document.getElementById('latest-carousel');
-    if (!track) return;
-    var step = function () { return Math.max(track.clientWidth * 0.8, 280); };
-    var prev = document.querySelector('[data-carousel-prev]');
-    var next = document.querySelector('[data-carousel-next]');
-    if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
-    if (next) next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
-  })();
-</script>

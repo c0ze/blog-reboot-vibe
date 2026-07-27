@@ -8,25 +8,23 @@ interface Props {
   date: Date;
   tags: string[];
   no: string;
+  minutes?: number;
+  lang?: string;
 }
 
-const { slug, title, date, tags, no } = Astro.props;
+const { slug, title, date, tags, no, minutes, lang } = Astro.props;
 ---
 
-<div class="ledger-row group relative px-1">
-  <span class="ledger-no">{no}</span>
-  <time datetime={date.toISOString()} class="font-mono text-xs text-muted-foreground">{formatDateShort(date)}</time>
-  <span class="min-w-0">
-    <a
-      href={`/blog/${slug}`}
-      class="block truncate font-display text-base font-semibold tracking-tight transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-primary sm:text-lg"
-    >
-      {title}
-    </a>
-    {tags.length > 0 && (
-      <span class="relative z-[1] mt-1.5 hidden flex-wrap gap-1.5 sm:flex">
-        {tags.slice(0, 4).map((tag) => <TagChip tag={tag} />)}
-      </span>
-    )}
+<div class="ledger__row" data-tags={tags.join(',')}>
+  <span class="num meta">{no}</span>
+  <time class="num meta" datetime={date.toISOString()}>{formatDateShort(date)}</time>
+  <span class="ledger__title" lang={lang && lang !== 'en' ? lang : undefined}>
+    <a href={`/blog/${slug}`}>{title}</a>
   </span>
+  {minutes !== undefined && <span class="label meta ledger__min">{minutes} min</span>}
+  {tags.length > 0 && (
+    <span class="tags ledger__tags">
+      {tags.slice(0, 5).map((tag) => <TagChip tag={tag} plain />)}
+    </span>
+  )}
 </div>

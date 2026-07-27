@@ -2,21 +2,23 @@
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-20 border-t border-border">
-  <div class="container mx-auto flex flex-col items-center gap-3 px-4 py-10 text-center">
-    <p class="font-mono text-[0.68rem] uppercase tracking-[0.22em] text-muted-foreground">
-      Coze — printed in the side-quest room since 2010
-    </p>
-    <p class="text-sm text-muted-foreground">
-      Human-driven. AI is utilized solely for editorial refinement.
-    </p>
-    <nav class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm" aria-label="Footer">
-      <a href="/rss.xml" class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">RSS</a>
-      <a rel="me" href="https://mastodon.world/@arda" class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">Mastodon</a>
-      <a rel="me" href="https://bsky.app/profile/arda-karaduman.bsky.social" class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">Bluesky</a>
-      <a href="https://arda.tr" class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">arda.tr</a>
-      <a href="https://resume.arda.tr" class="text-muted-foreground underline underline-offset-4 transition-colors hover:text-primary">Resume</a>
-    </nav>
-    <p class="font-mono text-[0.62rem] text-muted-foreground/70">© {year} Arda Karaduman</p>
+<footer class="colophon" lang="en">
+  <div>
+    <p class="colophon__line">Coze — printed in the side-quest room since 2010.</p>
+    <p class="label meta mt-half">Human-driven. AI is utilized solely for editorial refinement.</p>
+  </div>
+  <div class="colophon__legal label meta">
+    <span>Code MIT · Posts CC BY 4.0</span>
+    <span>
+      <a rel="me" href="https://mastodon.world/@arda">Mastodon</a> ·
+      <a rel="me" href="https://bsky.app/profile/arda-karaduman.bsky.social">Bluesky</a> ·
+      <a href="https://github.com/c0ze">GitHub c0ze</a>
+    </span>
+    <span>
+      <a href="/rss.xml">RSS</a> ·
+      <a href="https://arda.tr">arda.tr</a> ·
+      <a href="https://resume.arda.tr">resume</a>
+    </span>
+    <span>© {year} Arda Karaduman · blog.arda.tr</span>
   </div>
 </footer>

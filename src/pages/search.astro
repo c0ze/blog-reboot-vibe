@@ -1,31 +1,29 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getLedger } from '@/lib/ledger';
 
 // Full-text search over the ledger, powered by Pagefind. The index is
 // generated at build time (`pagefind --site dist`, chained in `npm run build`),
 // and the UI bundle is lazy-loaded only on this page so every other page keeps
 // shipping zero JavaScript.
+const { total } = await getLedger();
 ---
 
 <BaseLayout title="Search - Coze" description="Full-text search across every entry in the Coze ledger.">
-  <section class="container mx-auto max-w-3xl px-4 py-14">
-    <header class="mb-10">
-      <span class="font-mono text-[0.7rem] uppercase tracking-[0.24em] text-primary">Grep the ledger</span>
-      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
-        Search<span class="text-primary">.</span>
-      </h1>
-      <p class="mt-3 max-w-2xl text-lg text-muted-foreground">
-        Full-text search across every entry — posts only, no chrome.
-      </p>
-    </header>
+  <div class="section-rule">
+    <h1 class="label label--b">Grep the ledger</h1>
+    <span class="section-rule__line"></span>
+    <span class="label meta">{total} entries · posts only, no chrome</span>
+  </div>
 
+  <div class="panel searchpanel">
     <link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
     <div id="search"></div>
-    <p id="search-unavailable" class="hidden py-12 text-center font-mono text-sm text-muted-foreground">
-      № 000 — the search index only exists in production builds.
-      Run <code class="text-primary">npm run build</code> and preview <code class="text-primary">dist/</code> to try it here.
+    <p id="search-unavailable" class="narration" hidden>
+      №000 — the search index only exists in production builds. Run
+      <code>npm run build</code> and preview <code>dist/</code> to try it here.
     </p>
-  </section>
+  </div>
 </BaseLayout>
 
 <!-- Lazy-load the Pagefind UI bundle. In `astro dev` the /pagefind/ bundle
@@ -44,48 +42,97 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       });
     };
     script.onerror = function () {
-      document.getElementById('search-unavailable').classList.remove('hidden');
+      document.getElementById('search-unavailable').hidden = false;
     };
     document.head.appendChild(script);
   })();
 </script>
 
-<!-- Restyle the Pagefind UI with the site's theme tokens so it follows all
-     nine themes. Pagefind exposes these custom properties for exactly this. -->
+<!-- Restyle the Pagefind UI onto the printed page: hairline trim, radius 0,
+     gothic labels, mincho excerpts. Pagefind exposes these custom properties
+     for exactly this, and they re-tint with the rendition. -->
 <style is:global>
+  .searchpanel { padding: var(--pad); }
+
   #search {
     --pagefind-ui-scale: 0.9;
-    --pagefind-ui-primary: hsl(var(--primary));
-    --pagefind-ui-text: hsl(var(--foreground));
-    --pagefind-ui-background: hsl(var(--background));
-    --pagefind-ui-border: hsl(var(--border));
-    --pagefind-ui-tag: hsl(var(--muted));
+    --pagefind-ui-primary: var(--ink);
+    --pagefind-ui-text: var(--ink);
+    --pagefind-ui-background: var(--pulp);
+    --pagefind-ui-border: var(--trim);
+    --pagefind-ui-tag: var(--pulp-deep);
     --pagefind-ui-border-width: 1px;
-    --pagefind-ui-border-radius: var(--radius, 0.75rem);
-    --pagefind-ui-image-border-radius: var(--radius, 0.75rem);
-    --pagefind-ui-font: inherit;
+    --pagefind-ui-border-radius: 0;
+    --pagefind-ui-image-border-radius: 0;
+    --pagefind-ui-font: var(--mincho);
   }
   #search .pagefind-ui__search-input {
-    @apply bg-card font-sans font-normal;
+    @apply bg-card font-sans font-medium;
+    border-radius: 0;
+    border: 1px solid var(--trim);
+  }
+  #search .pagefind-ui__search-input:focus {
+    border-color: var(--ink);
+    outline: 2px solid var(--spot);
+    outline-offset: 2px;
   }
   #search .pagefind-ui__search-input::placeholder {
-    color: hsl(var(--muted-foreground));
+    color: var(--ink-grey);
     opacity: 1;
   }
-  #search .pagefind-ui__message,
+  #search .pagefind-ui__search-clear {
+    background: transparent;
+    color: var(--ink-grey);
+    border-radius: 0;
+  }
+  #search .pagefind-ui__message {
+    @apply font-sans;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-grey);
+  }
+  #search .pagefind-ui__result {
+    border-top: 1px solid var(--trim);
+    padding-top: 0.8rem;
+  }
   #search .pagefind-ui__result-title {
-    @apply font-display tracking-tight;
+    @apply font-sans;
+    font-weight: 700;
+    letter-spacing: -0.005em;
   }
   #search .pagefind-ui__result-link {
-    color: hsl(var(--primary));
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--trim);
+    text-underline-offset: 0.18em;
   }
+  #search .pagefind-ui__result-link:hover {
+    text-decoration-color: var(--ink);
+    text-decoration-thickness: 2px;
+  }
+  #search .pagefind-ui__result-excerpt {
+    font-family: var(--mincho);
+    color: var(--ink);
+  }
+  /* The hit marker is a band, not a spot: a result page can carry twenty of
+     them and Spot Vermilion is rationed to two per screen. */
   #search .pagefind-ui__result-excerpt mark {
-    background: hsl(var(--primary) / 0.25);
-    color: hsl(var(--foreground));
-    border-radius: 3px;
+    background: var(--pulp-deep);
+    color: var(--ink);
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 2px solid var(--ink);
   }
   #search .pagefind-ui__button {
-    @apply bg-secondary font-mono text-xs uppercase tracking-[0.14em];
-    color: hsl(var(--secondary-foreground));
+    @apply bg-secondary font-sans;
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--trim);
+    border-radius: 0;
   }
+  #search .pagefind-ui__button:hover { border-color: var(--ink); }
 </style>

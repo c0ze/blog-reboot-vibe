@@ -1,0 +1,66 @@
+---
+import TagChip from '@/components/TagChip.astro';
+import { dayStamp } from '@/lib/display';
+
+/**
+ * One panel of the serialised strip. Its width is its reading time: the
+ * `flex-grow` is the minute count, so the rhythm of publishing — the burst,
+ * the compression, the silence — is the layout itself.
+ */
+interface Props {
+  slug: string;
+  title: string;
+  date: Date;
+  no: string;
+  minutes: number;
+  tags: string[];
+  excerpt?: string;
+  /** The newest entry: the one place Spot Vermilion appears above the fold. */
+  current?: boolean;
+  /** Lead panels carry their narration; the rest carry a title and a tier. */
+  lead?: boolean;
+  /** Short entries sit back on Pulp Deep rather than shrinking to nothing. */
+  sitBack?: boolean;
+  lang?: string;
+  /** Printed after the minute count: "longest of the month", "shortest". */
+  note?: string;
+}
+
+const {
+  slug, title, date, no, minutes, tags,
+  excerpt, current = false, lead = false, sitBack = false, lang, note,
+} = Astro.props;
+
+const isForeign = Boolean(lang && lang !== 'en');
+---
+
+<article
+  class={`stripcell${sitBack ? ' stripcell--sit-back' : ''}`}
+  style={`flex-grow:${minutes}`}
+  lang={isForeign ? lang : undefined}
+>
+  <div class="stripcell__top">
+    <span class="num">{no}</span>
+    <time class="num meta" datetime={date.toISOString()}>{dayStamp(date)}</time>
+    {current && (
+      <>
+        <span class="strip__spacer"></span>
+        <span class="spot">Current</span>
+      </>
+    )}
+  </div>
+
+  <h3 class={lead ? 't-3' : 't-4'}>
+    <a class="stripcell__link" href={`/blog/${slug}`}>{title}</a>
+  </h3>
+
+  {lead && excerpt && <p class="narration narration--tight">{excerpt}</p>}
+
+  {tags.length > 0 && (
+    <ul class="tags push">
+      {tags.slice(0, 4).map((tag) => <li><TagChip tag={tag} plain /></li>)}
+    </ul>
+  )}
+
+  <span class="label meta">{minutes} min{note ? ` · ${note}` : ''}</span>
+</article>

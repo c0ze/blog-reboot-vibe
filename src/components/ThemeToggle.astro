@@ -1,131 +1,79 @@
 ---
-// Theme menu: lists the full canonical catalogue (shared with arda.tr and
-// resume.arda.tr). The swatch hexes mirror each theme's --primary/--background.
-const themes = [
-  { id: 'alucard', name: 'Ivory', hint: 'light', color: '#f7f5f0' },
-  { id: 'paper', name: 'Paper', hint: 'high contrast', color: '#ffffff' },
-  { id: 'blade', name: 'Abyss', hint: 'dark teal', color: '#80FFEA' },
-  { id: 'dracula-pro', name: 'Void', hint: 'dark purple', color: '#9580FF' },
-  { id: 'carbon', name: 'Carbon', hint: 'high contrast', color: '#0a0a0a' },
-  { id: 'buffy', name: 'Sakura', hint: 'dark magenta', color: '#FF80BF' },
-  { id: 'lincoln', name: 'Amber', hint: 'dark gold', color: '#FFFF80' },
-  { id: 'morbius', name: 'Ember', hint: 'dark red', color: '#FF9580' },
-  { id: 'van-helsing', name: 'Steel', hint: 'dark blue', color: '#708CA9' },
+/**
+ * The rendition switch — the printer's plate selector, set as a corner tag.
+ *
+ * Four renditions, in menu order: Pulp (native), Pulp HC, Beta (the reversed
+ * page), Beta HC. The two HC plates target WCAG AAA. The id list is duplicated
+ * in the boot script in BaseLayout.astro; keep them in step.
+ */
+const renditions = [
+  { id: 'pulp', name: 'Pulp', hint: 'light' },
+  { id: 'pulp-hc', name: 'Pulp HC', hint: 'high contrast light' },
+  { id: 'beta', name: 'Beta', hint: 'dark' },
+  { id: 'beta-hc', name: 'Beta HC', hint: 'high contrast dark' },
 ];
 ---
 
-<div class="theme-menu relative">
-  <button
-    class="theme-menu-button glass flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:text-primary"
-    aria-label="Select theme"
-    aria-haspopup="true"
-    aria-expanded="false"
-    type="button"
-  >
-    <span class="theme-menu-swatch h-4 w-4 rounded-full ring-1 ring-foreground/20" style="background:#80FFEA"></span>
-  </button>
-
-  <div
-    class="theme-menu-list glass hidden absolute right-0 top-11 z-50 w-60 rounded-lg border bg-popover p-1.5 shadow-medium"
-    role="menu"
-    aria-label="Themes"
-  >
-    {themes.map((t) => (
-      <button
-        class="theme-menu-item flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
-        role="menuitemradio"
-        aria-checked="false"
-        data-theme-id={t.id}
-        type="button"
-      >
-        <span class="h-4 w-4 shrink-0 rounded-full border border-border" style={`background:${t.color}`}></span>
-        <span class="whitespace-nowrap font-medium">{t.name}</span>
-        <span class="ml-auto whitespace-nowrap text-right font-mono text-[0.62rem] leading-none text-muted-foreground">{t.hint}</span>
-      </button>
-    ))}
-  </div>
+<div class="corner" role="group" aria-label="Rendition">
+  {renditions.map((r) => (
+    <button
+      type="button"
+      class="corner__btn"
+      data-rendition={r.id}
+      aria-pressed="false"
+      title={`${r.name} — ${r.hint}`}
+    >{r.name}</button>
+  ))}
 </div>
 
 <script is:inline>
 (function () {
-  var THEMES = ['blade', 'alucard', 'paper', 'dracula-pro', 'carbon', 'buffy', 'lincoln', 'morbius', 'van-helsing'];
-  var LEGACY = { dark: 'blade', light: 'alucard', dracula: 'dracula-pro' };
-  var COLORS = {
-    blade: '#212c2a', alucard: '#f7f5f0', paper: '#ffffff',
-    'dracula-pro': '#22202d', carbon: '#050505', buffy: '#2a202c',
-    lincoln: '#2c2a21', morbius: '#2c2021', 'van-helsing': '#090a0c'
-  };
-  var SWATCH = {
-    blade: '#80FFEA', alucard: '#f7f5f0', paper: '#ffffff',
-    'dracula-pro': '#9580FF', carbon: '#0a0a0a', buffy: '#FF80BF',
-    lincoln: '#FFFF80', morbius: '#FF9580', 'van-helsing': '#708CA9'
+  var RENDITIONS = ['pulp', 'pulp-hc', 'beta', 'beta-hc'];
+  var COLORS = { pulp: '#EDEAE3', 'pulp-hc': '#F1EEE7', beta: '#0B0B0C', 'beta-hc': '#050506' };
+  // Returning visitors carry an Ink & Ledger theme id; land them on the
+  // nearest plate rather than leaving them themeless.
+  var LEGACY = {
+    dark: 'beta', light: 'pulp', dracula: 'beta',
+    alucard: 'pulp', paper: 'pulp-hc', blade: 'beta', 'dracula-pro': 'beta',
+    carbon: 'beta-hc', buffy: 'beta', lincoln: 'beta', morbius: 'beta',
+    'van-helsing': 'beta'
   };
 
-  function currentTheme() {
+  function current() {
     var stored = localStorage.getItem('theme');
     if (stored && LEGACY[stored]) stored = LEGACY[stored];
-    if (stored && THEMES.indexOf(stored) !== -1) return stored;
-    for (var i = 0; i < THEMES.length; i++) {
-      if (document.documentElement.classList.contains(THEMES[i])) return THEMES[i];
+    if (stored && RENDITIONS.indexOf(stored) !== -1) return stored;
+    for (var i = 0; i < RENDITIONS.length; i++) {
+      if (document.documentElement.classList.contains(RENDITIONS[i])) return RENDITIONS[i];
     }
-    return 'blade';
+    return 'pulp';
   }
 
-  function applyTheme(theme) {
-    THEMES.forEach(function (t) { document.documentElement.classList.remove(t); });
-    document.documentElement.classList.add(theme);
-    localStorage.setItem('theme', theme);
+  function apply(rendition) {
+    RENDITIONS.forEach(function (r) { document.documentElement.classList.remove(r); });
+    document.documentElement.classList.add(rendition);
+    localStorage.setItem('theme', rendition);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta && COLORS[theme]) meta.setAttribute('content', COLORS[theme]);
-    syncUI(theme);
+    if (meta && COLORS[rendition]) meta.setAttribute('content', COLORS[rendition]);
+    sync(rendition);
   }
 
-  function syncUI(theme) {
-    document.querySelectorAll('.theme-menu-swatch').forEach(function (el) {
-      el.style.background = SWATCH[theme] || SWATCH.blade;
-    });
-    document.querySelectorAll('.theme-menu-item').forEach(function (item) {
-      item.setAttribute('aria-checked', String(item.getAttribute('data-theme-id') === theme));
-    });
-  }
-
-  function closeAll() {
-    document.querySelectorAll('.theme-menu').forEach(function (menu) {
-      menu.querySelector('.theme-menu-list').classList.add('hidden');
-      menu.querySelector('.theme-menu-button').setAttribute('aria-expanded', 'false');
+  function sync(rendition) {
+    document.querySelectorAll('[data-rendition]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(btn.getAttribute('data-rendition') === rendition));
     });
   }
 
   function init() {
-    syncUI(currentTheme());
-    document.querySelectorAll('.theme-menu').forEach(function (menu) {
-      if (menu.hasAttribute('data-init')) return;
-      menu.setAttribute('data-init', 'true');
-
-      var button = menu.querySelector('.theme-menu-button');
-      var list = menu.querySelector('.theme-menu-list');
-
-      button.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var open = !list.classList.contains('hidden');
-        closeAll();
-        if (!open) {
-          list.classList.remove('hidden');
-          button.setAttribute('aria-expanded', 'true');
-        }
-      });
-
-      menu.querySelectorAll('.theme-menu-item').forEach(function (item) {
-        item.addEventListener('click', function () {
-          applyTheme(item.getAttribute('data-theme-id'));
-          closeAll();
+    sync(current());
+    document.querySelectorAll('.corner').forEach(function (group) {
+      if (group.hasAttribute('data-init')) return;
+      group.setAttribute('data-init', 'true');
+      group.querySelectorAll('[data-rendition]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          apply(btn.getAttribute('data-rendition'));
         });
       });
-    });
-
-    document.addEventListener('click', closeAll);
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeAll();
     });
   }
 
@@ -134,6 +82,5 @@ const themes = [
   } else {
     init();
   }
-  document.addEventListener('astro:page-load', init);
 })();
 </script>

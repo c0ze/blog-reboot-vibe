@@ -2,7 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { render } from 'astro:content';
 import { getPublishedPosts, getSlug } from '@/lib/posts';
-import { ledgerNo, readingTimeMinutes, formatDate } from '@/lib/display';
+import { ledgerNo, readingTimeMinutes, formatDateShort } from '@/lib/display';
 import TagChip from '@/components/TagChip.astro';
 import LedgerRow from '@/components/LedgerRow.astro';
 
@@ -47,8 +47,10 @@ export async function getStaticPaths() {
 const { post, no, prevPost, nextPost, related } = Astro.props;
 const { Content } = await render(post);
 
-const formattedDate = formatDate(post.data.date);
 const minutes = readingTimeMinutes(post.body);
+// The reading-time gauge: a tone measure, capped so a 13-minute essay reads
+// as long rather than as a bar that leaves the panel.
+const gaugeWidth = Math.min(120, Math.max(14, minutes * 9));
 
 // Determine OG image - use post image if available, otherwise default
 const ogImage = post.data.image || '/images/og-image.png';
@@ -66,64 +68,54 @@ const ogImageAbsolute = new URL(ogImage, Astro.site).href;
 >
   <!-- data-pagefind-body scopes the Pagefind search index to post content:
        once any page declares it, pages without it (home, listings) are skipped. -->
-  <article class="container mx-auto max-w-3xl px-4 py-14" data-pagefind-body>
-    <!-- Header -->
-    <header class="mb-10">
-      <a
-        href="/blog"
-        class="inline-flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-primary"
-      >
-        <svg aria-hidden="true" class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m12 19-7-7 7-7"/>
-          <path d="M19 12H5"/>
-        </svg>
-        back to the ledger
-      </a>
+  <article class="post" data-pagefind-body>
+    <div class="readpanel">
+      <header class="post__head">
+        <a class="label label--b" href="/blog" lang="en">← back to the ledger</a>
 
-      <div class="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-border pb-4 font-mono text-xs text-muted-foreground">
-        <span class="tracking-widest text-primary">{no}</span>
-        <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
-        <span aria-hidden="true">·</span>
-        <span>{minutes} min read</span>
-        {post.data.author && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>{post.data.author}</span>
-          </>
-        )}
-      </div>
-
-      <h1 class="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-5xl">
-        {post.data.title}
-      </h1>
-
-      {post.data.tags.length > 0 && (
-        <div class="mt-5 flex flex-wrap gap-2">
-          {post.data.tags.map((tag) => <TagChip tag={tag} />)}
+        <div class="strip" lang="en">
+          <span class="tab">{no}</span>
+          <time class="num meta" datetime={post.data.date.toISOString()}>{formatDateShort(post.data.date)}</time>
+          <span class="gauge" title={`${minutes} minute read`}>
+            <span class="gauge__bar tone-50" style={`width:${gaugeWidth}px`}></span>
+            <span class="label meta">{minutes} min</span>
+          </span>
+          <span class="strip__spacer"></span>
+          {post.data.author && <span class="label meta">{post.data.author}</span>}
         </div>
+
+        <h1 class="t-display post__title">{post.data.title}</h1>
+
+        {post.data.tags.length > 0 && (
+          <ul class="tags">
+            {post.data.tags.map((tag) => <li><TagChip tag={tag} /></li>)}
+          </ul>
+        )}
+      </header>
+
+      <div class="post__bleed tone-70" aria-hidden="true"></div>
+
+      {post.data.excerpt && (
+        <p class="narration narration--boxed">{post.data.excerpt}</p>
       )}
-    </header>
 
-    <!-- Lede -->
-    {post.data.excerpt && (
-      <p class="mb-10 border-l-2 border-primary pl-5 text-lg leading-relaxed text-muted-foreground">
-        {post.data.excerpt}
-      </p>
-    )}
-
-    <!-- Content -->
-    <div class="prose prose-lg max-w-none dark:prose-invert prose-headings:font-display prose-headings:tracking-tight prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-code:text-primary prose-pre:border prose-pre:border-border prose-pre:bg-card prose-hr:border-border">
-      <Content />
+      <!-- The reading column: one 68ch measure of mincho. Media, code and
+           tables are not prose and take the panel. -->
+      <div class="reading prose mt-half">
+        <Content />
+      </div>
     </div>
 
     <!-- Related entries: shared-tag neighbours, resolved at build time.
          data-pagefind-ignore keeps their titles out of this page's search record. -->
     {related.length > 0 && (
-      <section class="mt-16 border-t border-border pt-8" aria-labelledby="related-heading" data-pagefind-ignore>
-        <h2 id="related-heading" class="font-mono text-[0.7rem] uppercase tracking-[0.24em] text-primary">
-          Related entries
-        </h2>
-        <div class="mt-4 border-t border-border">
+      <section aria-labelledby="related-heading" data-pagefind-ignore lang="en">
+        <div class="section-rule" style="margin-top:var(--gut)">
+          <h2 id="related-heading" class="label label--b">Related entries</h2>
+          <span class="section-rule__line"></span>
+          <span class="label meta">shared tags</span>
+        </div>
+        <div class="ledger">
           {related.map(({ post: rel, no: relNo }) => (
             <LedgerRow
               slug={getSlug(rel)}
@@ -131,39 +123,28 @@ const ogImageAbsolute = new URL(ogImage, Astro.site).href;
               date={rel.data.date}
               tags={rel.data.tags}
               no={relNo}
+              minutes={readingTimeMinutes(rel.body)}
+              lang={rel.data.lang}
             />
           ))}
         </div>
       </section>
     )}
 
-    <!-- Prev / next -->
-    <nav class="mt-16 border-t border-border pt-8" aria-label="Adjacent posts" data-pagefind-ignore>
-      <div class="grid gap-4 md:grid-cols-2">
-        {prevPost && (
-          <a
-            href={`/blog/${getSlug(prevPost)}`}
-            class="group flex flex-col rounded-lg border border-border p-4 transition-all hover:border-primary/50 hover:bg-card"
-          >
-            <span class="mb-1 font-mono text-[0.66rem] uppercase tracking-[0.16em] text-muted-foreground">← previous entry</span>
-            <span class="line-clamp-1 font-display font-semibold transition-colors group-hover:text-primary">
-              {prevPost.data.title}
-            </span>
-          </a>
-        )}
-        {!prevPost && <div />}
-        {nextPost && (
-          <a
-            href={`/blog/${getSlug(nextPost)}`}
-            class="group flex flex-col rounded-lg border border-border p-4 text-right transition-all hover:border-primary/50 hover:bg-card md:col-start-2"
-          >
-            <span class="mb-1 font-mono text-[0.66rem] uppercase tracking-[0.16em] text-muted-foreground">next entry →</span>
-            <span class="line-clamp-1 font-display font-semibold transition-colors group-hover:text-primary">
-              {nextPost.data.title}
-            </span>
-          </a>
-        )}
-      </div>
+    <!-- Prev / next: the page turn is the cliffhanger. -->
+    <nav class="postnav" aria-label="Adjacent posts" data-pagefind-ignore>
+      {prevPost && (
+        <a class="postnav__cell" href={`/blog/${getSlug(prevPost)}`}>
+          <span class="label meta" lang="en">← previous entry</span>
+          <span class="postnav__title" lang={prevPost.data.lang ?? 'en'}>{prevPost.data.title}</span>
+        </a>
+      )}
+      {nextPost && (
+        <a class="postnav__cell postnav__cell--next" href={`/blog/${getSlug(nextPost)}`}>
+          <span class="label meta" lang="en">next entry →</span>
+          <span class="postnav__title" lang={nextPost.data.lang ?? 'en'}>{nextPost.data.title}</span>
+        </a>
+      )}
     </nav>
   </article>
 

@@ -1,5 +1,9 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import { getLedger } from '@/lib/ledger';
+import { formatDateShort } from '@/lib/display';
+
+const { total, firstYear, latest } = await getLedger();
 
 const pathname = Astro.url.pathname;
 const isActive = (path: string) => pathname === path || pathname === path + '/';
@@ -9,101 +13,54 @@ const navLinks = [
   { href: '/archive', label: 'Archive' },
   { href: '/search', label: 'Search' },
 ];
-const externalLinks = [
-  { href: 'https://arda.tr', label: 'arda.tr' },
-  { href: 'https://pagan.tr', label: 'pagan.tr' },
-];
 ---
 
-<header class="glass sticky top-0 z-50 border-b">
-  <nav class="container mx-auto flex items-center justify-between px-4 py-3.5">
-    <a href="/" class="group flex items-baseline gap-2.5 no-underline">
-      <span class="font-display text-2xl font-bold tracking-tight transition-colors group-hover:text-primary">Coze</span>
-      <span class="hidden font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground sm:inline">
-        the ledger of side&nbsp;quests
-      </span>
+<!-- lang="en" on the chrome: `text-transform: uppercase` follows the element's
+     language, and a Turkish post sets <html lang="tr">, which would print
+     ARCHİVE and MİN. The chrome is English wherever the post is not. -->
+<header class="masthead" lang="en">
+  <div>
+    <a href="/" aria-label="Coze — home">
+      <span class="wordmark">Coze.</span>
     </a>
+    <p class="strapline">the ledger of side quests</p>
+  </div>
 
-    <!-- Desktop navigation -->
-    <div class="hidden items-center gap-5 md:flex">
+  <div class="masthead__side">
+    <nav class="masthead__nav label label--b" aria-label="Primary">
       {navLinks.map((link) => (
-        <a
-          href={link.href}
-          class={`font-mono text-[0.74rem] uppercase tracking-[0.14em] transition-colors hover:text-primary ${isActive(link.href) ? 'text-primary' : 'text-muted-foreground'}`}
-          aria-current={isActive(link.href) ? 'page' : undefined}
-        >
-          {link.label}
-        </a>
+        <a href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>
       ))}
-      <span class="h-4 w-px bg-border" aria-hidden="true"></span>
-      {externalLinks.map((link) => (
-        <a
-          href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="font-mono text-[0.74rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-primary"
-        >
-          {link.label}<span aria-hidden="true" class="ml-0.5 text-[0.6rem]">↗</span>
-        </a>
-      ))}
-      <ThemeToggle />
-      <a
-        href="/rss.xml"
-        class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
-        aria-label="RSS Feed"
-      >
-        <svg aria-hidden="true" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/>
-        </svg>
-      </a>
-    </div>
-
-    <!-- Mobile navigation -->
-    <div class="flex items-center gap-2 md:hidden">
-      <ThemeToggle />
-      <button
-        id="mobile-menu-button"
-        class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
-        aria-label="Toggle menu"
-        aria-controls="mobile-menu"
-        aria-expanded="false"
-      >
-        <svg aria-hidden="true" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" x2="20" y1="12" y2="12"/>
-          <line x1="4" x2="20" y1="6" y2="6"/>
-          <line x1="4" x2="20" y1="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Mobile menu -->
-  <div id="mobile-menu" class="hidden border-t border-border bg-popover md:hidden">
-    <div class="container mx-auto flex flex-col gap-1 px-4 py-3">
-      {[...navLinks, ...externalLinks].map((link) => (
-        <a
-          href={link.href}
-          {...(link.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-          class="rounded-md px-2 py-2.5 font-mono text-[0.78rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
-        >
-          {link.label}
-        </a>
-      ))}
-      <a href="/rss.xml" class="rounded-md px-2 py-2.5 font-mono text-[0.78rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-muted hover:text-primary">
-        RSS
-      </a>
-    </div>
+      <a href="/rss.xml">RSS</a>
+      <a href="https://arda.tr" rel="noopener noreferrer">arda.tr</a>
+    </nav>
+    <ThemeToggle />
+    <p class="masthead__stat label meta">
+      {total} entries · since {firstYear} · latest {formatDateShort(latest)}
+    </p>
   </div>
 </header>
 
-<script>
-  const button = document.getElementById('mobile-menu-button');
-  const menu = document.getElementById('mobile-menu');
-
-  if (button && menu) {
-    button.addEventListener('click', () => {
-      menu.classList.toggle('hidden');
-      button.setAttribute('aria-expanded', String(!menu.classList.contains('hidden')));
-    });
-  }
-</script>
+<!-- The register strip: the four pitches this page is printed in, pulled in
+     order. 10 / 30 / 50 / 70, the last one the inverted plate. -->
+<svg class="wedge" width="100%" height="14" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="reg10" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.01" style="fill:currentColor" /><circle cx="0" cy="0" r="1.01" style="fill:currentColor" /><circle cx="8" cy="0" r="1.01" style="fill:currentColor" /><circle cx="0" cy="8" r="1.01" style="fill:currentColor" /><circle cx="8" cy="8" r="1.01" style="fill:currentColor" />
+    </pattern>
+    <pattern id="reg30" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.75" style="fill:currentColor" /><circle cx="0" cy="0" r="1.75" style="fill:currentColor" /><circle cx="8" cy="0" r="1.75" style="fill:currentColor" /><circle cx="0" cy="8" r="1.75" style="fill:currentColor" /><circle cx="8" cy="8" r="1.75" style="fill:currentColor" />
+    </pattern>
+    <pattern id="reg50" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.26" style="fill:currentColor" /><circle cx="0" cy="0" r="2.26" style="fill:currentColor" /><circle cx="8" cy="0" r="2.26" style="fill:currentColor" /><circle cx="0" cy="8" r="2.26" style="fill:currentColor" /><circle cx="8" cy="8" r="2.26" style="fill:currentColor" />
+    </pattern>
+    <pattern id="reg70" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.75" style="fill:var(--pulp)" /><circle cx="0" cy="0" r="1.75" style="fill:var(--pulp)" /><circle cx="8" cy="0" r="1.75" style="fill:var(--pulp)" /><circle cx="0" cy="8" r="1.75" style="fill:var(--pulp)" /><circle cx="8" cy="8" r="1.75" style="fill:var(--pulp)" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="25%" height="14" fill="url(#reg10)" />
+  <rect x="25%" y="0" width="25%" height="14" fill="url(#reg30)" />
+  <rect x="50%" y="0" width="25%" height="14" fill="url(#reg50)" />
+  <rect x="75%" y="0" width="25%" height="14" style="fill:currentColor" />
+  <rect x="75%" y="0" width="25%" height="14" fill="url(#reg70)" />
+</svg>
