@@ -1,150 +1,93 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+These rules apply to every task in this repository unless explicitly overridden.
+Bias: caution over speed on non-trivial work. Use judgment on trivial tasks.
 
-## Project Overview
+This file is generic and identical across projects. **It contains no project-specific
+information.** `AGENTS.md` is a symlink to this file, so Claude Code, Codex, Kimi, Cursor
+and anything else reading either name get the same rules.
 
-Personal tech blog at **blog.arda.tr** covering AI/LLM tooling, Go/DevOps, home networking, and generative AI music. Built with Astro for static HTML output.
+## Where knowledge lives
 
-## Architecture
+Read in this order. Stop as soon as you have what you need.
 
-- **Framework**: Astro 5 (Static Site Generator)
-- **Styling**: TailwindCSS with CSS variables
-- **Content**: Markdown files via Astro Content Collections
-- **Theming**: Four renditions — Pulp / Pulp HC / Beta / Beta HC (see Theming below)
-- **Deployment**: GitHub Pages
+| Layer | File | Contains |
+|---|---|---|
+| 1. Rules | `CLAUDE.md` = `AGENTS.md` (this file) | How to work. Generic, never project-specific. |
+| 2. Project | [PROJECT.md](PROJECT.md) | This project: architecture, constraints, key files, how to run and validate. |
+| 3. Wiki | `llm-wiki/index.md` (if present) | Compounding knowledge: decisions, entities, sources. |
 
-## Project Structure
+**Before changing project behavior, read `PROJECT.md`.** It is the handoff document and
+takes precedence over anything you infer from the code.
 
-```
-.
-├── src/
-│   ├── content/
-│   │   └── blog/               # Markdown posts in year folders (YYYY/YYYY-MM-DD-slug.md)
-│   ├── components/
-│   │   ├── Header.astro        # Masthead: wordmark, nav, rendition switch, register strip
-│   │   ├── Footer.astro        # Colophon
-│   │   ├── StripCell.astro     # One panel of the serialised strip (width = reading time)
-│   │   ├── LedgerRow.astro     # Ruled ledger band used on /blog, /archive and related
-│   │   ├── TagChip.astro       # Outlined tag chip
-│   │   └── ThemeToggle.astro   # Rendition switch (4 renditions)
-│   ├── layouts/
-│   │   └── BaseLayout.astro    # Base HTML layout with SEO + theme boot script
-│   ├── lib/
-│   │   ├── posts.ts            # getPublishedPosts()/getSlug() helpers (pages + RSS)
-│   │   ├── ledger.ts           # getLedger(): numbering, month tiers, year spine, the silence, tag counts
-│   │   └── display.ts          # Date, reading-time, tone-plate and label helpers
-│   ├── pages/
-│   │   ├── index.astro         # Home page
-│   │   ├── blog/
-│   │   │   ├── index.astro     # Blog listing with tag filter
-│   │   │   └── [slug].astro    # Individual blog post (+ related posts)
-│   │   ├── archive.astro       # Posts grouped by year
-│   │   ├── search.astro        # Pagefind search (only page that loads JS beyond inline scripts)
-│   │   ├── rss.xml.js          # RSS feed
-│   │   └── 404.astro           # Not found page
-│   ├── content.config.ts       # Content collection schema
-│   └── styles/
-│       └── global.css          # Rendition tokens, screentone, panel/tier/ledger CSS, Tailwind
-├── public/
-│   └── images/                 # Static images, OG images
-├── astro.config.mjs            # Astro configuration
-└── tailwind.config.mjs         # Tailwind with CSS variables
-```
+If a project has an `llm-wiki/`, it follows the Karpathy LLM-wiki pattern: raw sources are
+compiled once into interlinked pages, and you query the wiki rather than re-deriving from
+sources. Start at `index.md` and `agent-rules.md`. Append to `log.md` when you change it.
+Treat archived pages as historical only — never cite them as current.
 
-## Commands
+Keep the layers honest: a fact that is true of every project belongs here; a fact true of
+this project belongs in `PROJECT.md`; a fact that took real work to establish belongs in
+the wiki. Duplicating across layers is how they drift.
 
-```bash
-npm run dev      # Development server (port 8080)
-npm run build    # Production build to dist/ (merges sitemap, then indexes search with Pagefind)
-npm run preview  # Preview production build
-```
+## Rule 1 — Think before coding
+State assumptions explicitly. If uncertain, ask rather than guess.
+Present multiple interpretations when ambiguity exists.
+Push back when a simpler approach exists.
+Stop when confused. Name what's unclear.
 
-The Pagefind search index (`dist/pagefind/`) only exists after a build, so
-`/search` shows a quiet fallback message under `npm run dev`. Only blog post
-pages are indexed (`data-pagefind-body` on the post article).
+## Rule 2 — Simplicity first
+Minimum code that solves the problem. Nothing speculative.
+No features beyond what was asked. No abstractions for single-use code.
+Test: would a senior engineer say this is overcomplicated? If yes, simplify.
 
-## Blog Posts
+## Rule 3 — Surgical changes
+Touch only what you must. Clean up only your own mess.
+Don't "improve" adjacent code, comments, or formatting.
+Don't refactor what isn't broken. Match existing style.
 
-### File Naming
-Posts live in year subdirectories of `src/content/blog/` with format: `YYYY/YYYY-MM-DD-slug-name.md` (e.g. `src/content/blog/2026/2026-01-28-my-post.md`)
+## Rule 4 — Goal-driven execution
+Define success criteria. Loop until verified.
+Don't follow steps. Define success and iterate.
+Strong success criteria let you loop independently.
 
-### Frontmatter Fields
-```markdown
----
-title: "Post Title"           # Required
-date: "YYYY-MM-DD"            # Required
-excerpt: "Brief description"  # For cards and social previews
-tags: ["ai", "dev"]           # For filtering
-keywords: "seo, keywords"     # SEO keywords
-description: "SEO desc"       # Meta description
-author: "Author Name"         # Post author
-image: "/images/og.png"       # Optional: custom OG image
-lang: "en"                    # Optional: post language (default "en")
-draft: true                   # Optional: hide from production builds (default false)
----
-```
+## Rule 5 — Use the model only for judgment calls
+Use the model for: classification, drafting, summarization, extraction.
+Do NOT use it for: routing, retries, deterministic transforms.
+If code can answer, code answers.
 
-### Content Collection
-Posts are loaded via Astro Content Collections defined in `src/content.config.ts`. Schema validates frontmatter at build time.
+## Rule 6 — Token budgets are not advisory
+Per-task: 4,000 tokens. Per-session: 30,000 tokens.
+If approaching budget, summarize and start fresh.
+Surface the breach. Do not silently overrun.
 
-## Theming
+## Rule 7 — Surface conflicts, don't average them
+If two patterns contradict, pick one (more recent / more tested).
+Explain why. Flag the other for cleanup.
+Don't blend conflicting patterns.
 
-Four **renditions** defined in `src/styles/global.css` as per-rendition HSL CSS
-variable blocks — the "Weekly Page" system, see [DESIGN.md](./DESIGN.md). The
-rendition lists live in `src/layouts/BaseLayout.astro` (boot script) and
-`src/components/ThemeToggle.astro` (`renditions` array). Catalogue, in menu
-order:
+## Rule 8 — Read before you write
+Before adding code, read exports, immediate callers, shared utilities.
+"Looks orthogonal" is dangerous. If unsure why code is structured a way, ask.
 
-| ID | Name | Kind |
-|----|------|------|
-| `pulp` | Pulp | Light, the native rendition (bound to `:root`) |
-| `pulp-hc` | Pulp HC | High-contrast light (AAA) |
-| `beta` | Beta | Dark — the reversed page |
-| `beta-hc` | Beta HC | High-contrast dark (AAA) |
+## Rule 9 — Tests verify intent, not just behavior
+Tests must encode WHY behavior matters, not just WHAT it does.
+A test that can't fail when business logic changes is wrong.
 
-The rendition is stored in localStorage under `theme` and applied as a class on
-`<html>`. The boot script in `BaseLayout.astro` migrates every legacy Ink &
-Ledger id (`alucard`/`paper`/`blade`/`dracula-pro`/`carbon`/`buffy`/`lincoln`/
-`morbius`/`van-helsing`, plus the older `dark`/`light`/`dracula`) onto the
-nearest plate, and falls back to the visitor's system color-scheme/contrast
-preference when nothing is stored.
+## Rule 10 — Checkpoint after every significant step
+Summarize what was done, what's verified, what's left.
+Don't continue from a state you can't describe back.
+If you lose track, stop and restate.
 
-`scripts/check-theme-contract.mjs` (run by `.github/workflows/theme-contract.yml`)
-compares this repo against the catalogue published by `c0ze/arda.tr`
-(`config/themes.json`). arda.tr now publishes its own four renditions with
-different ids, so the two catalogues have deliberately diverged; the script
-reports the divergence and soft-passes until the ids line up again. Run it
-locally with `THEMES_CONTRACT_PATH=../arda.tr/config/themes.json node scripts/check-theme-contract.mjs`.
+## Rule 11 — Match the codebase's conventions, even if you disagree
+Conformance > taste inside the codebase.
+If you genuinely think a convention is harmful, surface it. Don't fork silently.
 
+## Rule 12 — Fail loud
+"Completed" is wrong if anything was skipped silently.
+"Tests pass" is wrong if any were skipped.
+Default to surfacing uncertainty, not hiding it.
 
-## SEO & Social Sharing
-
-- **Per-page meta tags** - Title, description, keywords set in BaseLayout
-- **Open Graph** - og:title, og:description, og:image, og:url
-- **Twitter Cards** - summary_large_image format
-- **Custom OG images** - Add `image` field to frontmatter for per-post images
-- **JSON-LD** - BlogPosting schema on blog posts
-- **Canonical URLs** - Automatically generated
-
-## Path Aliases
-
-Configured in `astro.config.mjs` and `tsconfig.json`:
-```typescript
-import Component from '@/components/Component.astro'
-```
-
-## Key Differences from React Version
-
-1. **Static HTML** - Every page is pre-rendered, no client-side routing
-2. **No hydration** - Components render to HTML only; the build emits no Astro JS bundle, only `is:inline` scripts
-3. **Content Collections** - Type-safe markdown with Zod schema validation
-4. **Per-page OG images** - Social previews work correctly now
-5. **Faster builds** - ~3 seconds for all pages
-
-## Code Style
-
-- Use `.astro` files for components and pages
-- Keep interactive JS minimal (inline scripts with `is:inline`)
-- Use the Weekly Page classes (`.panel`, `.tierlab`, `.ledger__row`, `.label`, `.tone-*`) and the named tokens (`--ink`, `--pulp`, `--trim`, `--spot`); see DESIGN.md
-- Follow existing component patterns
+## Rule 13 — Keep these documents current
+When you learn something that contradicts `PROJECT.md`, fix `PROJECT.md` in the same
+change. A stale handoff document is worse than none — the next agent will trust it.
+Never edit `AGENTS.md`: it is a symlink to this file.
