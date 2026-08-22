@@ -15,7 +15,7 @@ draft: false
 Stop clicking buttons in a browser like a mundane mortal. Open your terminal.
 
 ```bash
-ssh -p 2222 shop.pagan.tr
+ssh shop.pagan.tr
 ```
 
 ![Pagan Shop TUI](/images/pagan_shop.png)
@@ -37,7 +37,7 @@ The stack is simple, efficient, and runs on a Google Cloud `e2-micro` instance (
 * **TUI Framework:** [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 * **Deployment:** Docker on Container-Optimized OS
 
-The shop is essentially a single binary that listens on Port 2222. When you connect, it spins up a tea program, renders the inventory (fetched from a Google Sheet), and waits for your command.
+The shop is essentially a single binary that listens on the standard SSH port. (It launched on port 2222 because I was not confident opening 22 to the outside world; I have since built up my courage. Just `ssh shop.pagan.tr` — no `-p` flag.) When you connect, it spins up a tea program, renders the inventory (fetched from a Google Sheet), and waits for your command.
 
 ## The Payment Nightmare: A Trilogy of Failure
 
@@ -90,7 +90,7 @@ The security model is now laughably simple:
 
 Cloudflare: A single A-record for shop set to DNS Only (Grey Cloud). No proxying, just IP resolution.
 
-Firewall: The GCP firewall blocks everything except TCP port 2222.
+Firewall: The GCP firewall blocks everything except TCP port 22.
 
 The Container: Runs in isolation. It doesn't know about the web. It doesn't serve HTML. It only speaks SSH.
 
@@ -101,4 +101,4 @@ This project started as a complex e-commerce platform and ended as a glorified c
 It is a reminder that sometimes the best software solution is to delete code, not write more of it.
 
 **Support the underground.**
-`ssh -p 2222 shop.pagan.tr`
+`ssh shop.pagan.tr`
