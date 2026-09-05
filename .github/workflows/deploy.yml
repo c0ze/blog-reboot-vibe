@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test browser controls
+        run: npm test
+
       - name: Type check
         run: npm run check
 

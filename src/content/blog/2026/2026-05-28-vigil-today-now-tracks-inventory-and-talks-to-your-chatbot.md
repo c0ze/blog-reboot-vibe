@@ -10,7 +10,7 @@ image: "/images/og/vigil-today-inventory-mcp.webp"
 draft: false
 ---
 
-In February I wrote about [Vigil.Today](./2026-02-27-introducing-vigil-today), a small PWA I built for the kind of recurring chores that are too small for a calendar but too easy to forget. Three months later it has grown into something I actually open every day, and a handful of the changes I made along the way are worth writing up.
+In February I wrote about [Vigil.Today](/blog/2026-02-27-introducing-vigil-today/), a small PWA I built for the kind of recurring chores that are too small for a calendar but too easy to forget. Three months later it has grown into something I actually open every day, and a handful of the changes I made along the way are worth writing up.
 
 The headlines: reminders can now decrement physical inventory, the widget hides the long tail of "due in 800 days" filter changes behind a drawer, and there is an MCP server so I can drive all of this from ChatGPT or Claude.
 
@@ -131,6 +131,6 @@ That's the contract. Pay me if you find the MCP genuinely useful, or don't and u
 
 The next thing on my list is finishing real billing for sensitive features — the Polar integration went live for a small subset of users a couple of weeks ago — and a few more MCP tools. Particularly: creating inventory items from chat, and a "what should I reorder this week" summary that reasons across lead times.
 
-This project sits alongside a few other small tools I've been shipping — [Skriv.ist](./2026-02-16-introducing-skriv-ist-ebook-reading-management-app) for ebooks and [Slop Machine](./2026-02-23-introducing-slop-machine) for AI-generated stories. The thread is the same: build the thing you want to use yourself, ship it, then keep showing up to it.
+This project sits alongside a few other small tools I've been shipping — [Skriv.ist](/blog/2026-02-16-introducing-skriv-ist-ebook-reading-management-app/) for ebooks and [Slop Machine](/blog/2026-02-23-introducing-slop-machine/) for AI-generated stories. The thread is the same: build the thing you want to use yourself, ship it, then keep showing up to it.
 
 👉 **[Try Vigil.Today](https://vigil.today)** · **[Connect a chatbot](https://vigil.today/ai-connector)**

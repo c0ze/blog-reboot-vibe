@@ -40,7 +40,8 @@ const renditions = [
   };
 
   function current() {
-    var stored = localStorage.getItem('theme');
+    var stored = null;
+    try { stored = localStorage.getItem('theme'); } catch (e) {}
     if (stored && LEGACY[stored]) stored = LEGACY[stored];
     if (stored && RENDITIONS.indexOf(stored) !== -1) return stored;
     for (var i = 0; i < RENDITIONS.length; i++) {
@@ -52,7 +53,7 @@ const renditions = [
   function apply(rendition) {
     RENDITIONS.forEach(function (r) { document.documentElement.classList.remove(r); });
     document.documentElement.classList.add(rendition);
-    localStorage.setItem('theme', rendition);
+    try { localStorage.setItem('theme', rendition); } catch (e) {}
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta && COLORS[rendition]) meta.setAttribute('content', COLORS[rendition]);
     sync(rendition);

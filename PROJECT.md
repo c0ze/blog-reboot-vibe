@@ -55,6 +55,7 @@ Personal tech blog at **blog.arda.tr** covering AI/LLM tooling, Go/DevOps, home 
 ## Commands
 
 ```bash
+npm test         # Browser-control regression tests (Node, no extra dependencies)
 npm run dev      # Development server (port 8080)
 npm run build    # Production build to dist/ (merges sitemap, then indexes search with Pagefind)
 npm run preview  # Preview production build
@@ -108,7 +109,8 @@ The rendition is stored in localStorage under `theme` and applied as a class on
 Ledger id (`alucard`/`paper`/`blade`/`dracula-pro`/`carbon`/`buffy`/`lincoln`/
 `morbius`/`van-helsing`, plus the older `dark`/`light`/`dracula`) onto the
 nearest plate, and falls back to the visitor's system color-scheme/contrast
-preference when nothing is stored.
+preference when nothing is stored. Theme controls continue to work when browser
+storage is blocked; preferences simply cannot persist in that case.
 
 `scripts/check-theme-contract.mjs` (run by `.github/workflows/theme-contract.yml`)
 compares this repo against the catalogue published by `c0ze/arda.tr`

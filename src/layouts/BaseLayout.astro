@@ -83,7 +83,8 @@ const ogLocale = lang === 'ja' ? 'ja_JP' : lang === 'tr' ? 'tr_TR' : 'en_US';
           'van-helsing': 'beta'
         };
         var COLORS = { pulp: '#EDEAE3', 'pulp-hc': '#F1EEE7', beta: '#0B0B0C', 'beta-hc': '#050506' };
-        var stored = localStorage.getItem('theme');
+        var stored = null;
+        try { stored = localStorage.getItem('theme'); } catch (e) {}
         if (stored && LEGACY[stored]) stored = LEGACY[stored];
         var rendition = stored;
         if (!rendition || RENDITIONS.indexOf(rendition) === -1) {

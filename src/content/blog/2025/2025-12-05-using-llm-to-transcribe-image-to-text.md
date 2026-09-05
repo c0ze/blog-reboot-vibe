@@ -172,7 +172,7 @@ Y
 3
 ```
 
-![OCR Example](/images/ocr_japanese_4.png)
+### OCR example: プルトニウム
 
 **Ground Truth:**
 ```

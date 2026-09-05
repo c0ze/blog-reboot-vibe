@@ -3,6 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
     "dev": "astro dev --port 8080",
     "build": "astro build && npx tsx scripts/merge-sitemap.ts && pagefind --site dist",
     "check": "astro check",

@@ -12,7 +12,7 @@ draft: false
 
 I'm incredibly excited to share the latest tool I've conjured up: **Slop Machine**. 
 
-If you've followed my recent posts about [Introducing FableCast](./2026-02-11-introducing-fablecast-fable-tales-as-imagined-by-ai) and [Building a LLM-Powered Story Creation Studio](./2026-02-15-creating-a-llm-powered-story-creation-studio), this is the culmination of that work. Slop Machine is a modified, generalized version of the engine I originally built for FableCast.
+If you've followed my recent posts about [Introducing FableCast](/blog/2026-02-11-introducing-fablecast-fable-tales-as-imagined-by-ai/) and [Building a LLM-Powered Story Creation Studio](/blog/2026-02-15-creating-a-llm-powered-story-creation-studio/), this is the culmination of that work. Slop Machine is a modified, generalized version of the engine I originally built for FableCast.
 
 If you've ever had a vivid concept for a universe but struggled with the vast amount of time it takes to write, illustrate, and narrate a story, you're going to love this. Slop Machine is a fully autonomous, AI-powered story generation engine designed to bring your creative worlds to life.
 
